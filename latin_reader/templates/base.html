@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Latin Reader{% endblock %} — LatinCy</title>
+    <meta name="description" content="{% block meta_description %}Read and parse Latin texts with automatic dependency visualization powered by LatinCy.{% endblock %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.1">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header" id="app-header">
+            <div class="header-glow"></div>
+            <div class="header-content">
+                <div class="logo-group">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" stroke="url(#logo-grad)" stroke-width="2.5" fill="none"/>
+                            <path d="M12 28 L20 12 L28 28" stroke="url(#logo-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="20" cy="12" r="3" fill="url(#logo-grad)"/>
+                            <circle cx="12" cy="28" r="2.5" fill="url(#logo-grad)"/>
+                            <circle cx="28" cy="28" r="2.5" fill="url(#logo-grad)"/>
+                            <line x1="16" y1="20" x2="24" y2="20" stroke="url(#logo-grad)" stroke-width="1.5" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="logo-grad" x1="0" y1="0" x2="40" y2="40">
+                                    <stop offset="0%" stop-color="#a78bfa"/>
+                                    <stop offset="100%" stop-color="#6ee7b7"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="app-title">{% block header_title %}Latin Reader{% endblock %}</h1>
+                        <p class="app-subtitle">Powered by LatinCy · la_core_web_trf</p>
+                    </div>
+                </div>
+                <nav class="header-nav">
+                    <a href="/" class="nav-link" id="home-link">Reader</a>
+                    <a href="{{ url_for('dev.dev_home') }}" class="nav-link" id="dev-tools-link">🔬 Dev Tools</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built with <a href="https://github.com/diyclassics/la_core_web_lg" target="_blank" rel="noopener">LatinCy</a> · <a href="https://spacy.io" target="_blank" rel="noopener">spaCy</a> · <a href="https://spacy.io/usage/visualizers" target="_blank" rel="noopener">displaCy</a></p>
+        </footer>
+    </div>
+
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Latin Reader{% endblock %}
+{% block meta_description %}Parse Latin text and visualize dependency trees using LatinCy and spaCy's displaCy.{% endblock %}
+{% block header_title %}Latin Sentence Mapper{% endblock %}
+
+{% block content %}
+            <!-- Input Section -->
+            <section class="input-section glass-panel" id="input-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">✍</span>
+                        Input Latin Text
+                    </h2>
+                    <div class="treebank-controls" id="treebank-controls" style="display: none;">
+                        <select id="author-select" class="author-select">
+                            <option value="">Select Author...</option>
+                        </select>
+                        <button class="treebank-btn" id="load-treebank-btn" disabled>Load Random Sentence</button>
+                    </div>
+                </div>
+                <div class="textarea-wrapper">
+                    <textarea 
+                        id="latin-input" 
+                        class="latin-textarea" 
+                        placeholder="Enter Latin text here... e.g. 'Gallia est omnis divisa in partes tres.'"
+                        rows="4"
+                        maxlength="5000"
+                    ></textarea>
+                    <div class="char-count"><span id="char-count-value">0</span> / 5000</div>
+                </div>
+                <button class="parse-button" id="parse-btn">
+                    <span class="btn-text">Parse Text</span>
+                    <span class="btn-loader" id="btn-loader">
+                        <span class="spinner"></span>
+                        Analyzing...
+                    </span>
+                </button>
+            </section>
+
+            <!-- Error Display -->
+            <div class="error-banner" id="error-banner" style="display: none;">
+                <span class="error-icon">⚠</span>
+                <span id="error-message"></span>
+                <button class="error-close" id="error-close">✕</button>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section" id="results-section" style="display: none;">
+                <!-- Dependency Tree -->
+                <div class="tree-panel glass-panel" id="tree-panel">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="section-icon">🗺️</span>
+                            Sentence Map
+                        </h2>
+                        <div class="tree-controls">
+                            <button class="control-btn" id="zoom-in-btn" title="Zoom In">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                            </button>
+                            <button class="control-btn" id="zoom-out-btn" title="Zoom Out">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                            </button>
+                            <button class="control-btn" id="zoom-reset-btn" title="Reset Zoom">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            </button>
+                            <button class="export-btn" id="export-pdf-btn" title="Export as PDF">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                PDF
+                            </button>
+                            <button class="export-btn" id="export-docx-btn" title="Export as Word Document">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                DOCX
+                            </button>
+                        </div>
+                    </div>
+                    <div class="tree-viewport" id="tree-viewport">
+                        <div class="tree-content" id="tree-content">
+                            <!-- displaCy SVG goes here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Token Table -->
+                <div class="token-panel glass-panel" id="token-panel">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="section-icon">📋</span>
+                            Token Analysis
+                        </h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="token-table" id="token-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Token</th>
+                                    <th>Lemma</th>
+                                    <th>POS</th>
+                                    <th>Tag</th>
+                                    <th>Dep</th>
+                                    <th>Head</th>
+                                    <th>Morphology</th>
+                                </tr>
+                            </thead>
+                            <tbody id="token-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+{% endblock %}
+
+{% block extra_body %}
+    <!-- Dependency label tooltip -->
+    <div class="dep-tooltip" id="dep-tooltip"></div>
+    
+    <!-- Glossary Side Panel -->
+    <div class="glossary-panel" id="glossary-panel">
+        <div class="glossary-header">
+            <h3>Dictionary</h3>
+            <button id="glossary-close" class="glossary-close">✕</button>
+        </div>
+        <div class="glossary-content" id="glossary-content">
+            <p class="glossary-placeholder">Hover or click a word in the sentence map to view its definitions.</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=1.1"></script>
+{% endblock %}

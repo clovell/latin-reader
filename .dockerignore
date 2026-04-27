@@ -1,0 +1,27 @@
+# Don't send these to Docker build context
+__pycache__/
+*.py[cod]
+*.egg-info/
+.git/
+.gitignore
+.DS_Store
+.venv/
+venv/
+*.whl
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Dev/test files
+tests/
+diagnostics/
+test*.py
+test*.svg
+vocab_data/
+
+# Scratch
+*.ipynb
+.ipynb_checkpoints/
+
+# Large data files (downloaded at build time via curl)
+latin_reader/static/data/

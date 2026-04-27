@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Raw vs Harmonized{% endblock %}
+{% block header_title %}Developer Tools{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dev-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 1200px) {
+        .comparison-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .parse-panel {
+        position: relative;
+        overflow: hidden;
+    }
+    .parse-panel .panel-label {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+    .panel-label.raw {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .panel-label.harmonized {
+        background: rgba(110, 231, 183, 0.15);
+        color: #6ee7b7;
+        border: 1px solid rgba(110, 231, 183, 0.3);
+    }
+    .parse-viewport {
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        min-height: 200px;
+    }
+    .parse-viewport svg {
+        max-width: none;
+    }
+    .changes-panel {
+        margin-top: 8px;
+    }
+    .change-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .change-count-badge.has-changes {
+        background: linear-gradient(135deg, rgba(110, 231, 183, 0.15), rgba(167, 139, 250, 0.15));
+        color: #6ee7b7;
+        border: 1px solid rgba(110, 231, 183, 0.2);
+    }
+    .change-count-badge.no-changes {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-muted);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .change-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+    .change-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        font-size: 0.85rem;
+    }
+    .change-card .token-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 80px;
+    }
+    .change-card .old-value {
+        color: #f87171;
+        text-decoration: line-through;
+        opacity: 0.8;
+    }
+    .change-card .arrow {
+        color: var(--text-muted);
+    }
+    .change-card .new-value {
+        color: #6ee7b7;
+        font-weight: 600;
+    }
+    .change-card .rule-tag {
+        margin-left: auto;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: rgba(167, 139, 250, 0.1);
+        color: #a78bfa;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .conllu-viewer {
+        margin-top: 16px;
+    }
+    .conllu-viewer summary {
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        padding: 8px 0;
+        user-select: none;
+    }
+    .conllu-viewer summary:hover {
+        color: var(--text-secondary);
+    }
+    .conllu-pre {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 16px;
+        overflow-x: auto;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .report-summary {
+        margin-top: 12px;
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        color: var(--text-muted);
+        white-space: pre-wrap;
+    }
+    .dev-input-row {
+        display: flex;
+        gap: 12px;
+        align-items: stretch;
+    }
+    .dev-input-row .latin-textarea {
+        flex: 1;
+    }
+    .dev-input-row .parse-button {
+        white-space: nowrap;
+        min-width: 160px;
+    }
+    .loading-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 15, 30, 0.7);
+        backdrop-filter: blur(4px);
+        border-radius: 12px;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+    }
+    .loading-overlay.active {
+        display: flex;
+    }
+    .loading-overlay .spinner {
+        width: 28px;
+        height: 28px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+            <section class="input-section glass-panel">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔬</span>
+                        Raw vs. Harmonized Parse Comparison
+                    </h2>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                    Enter Latin text to see the <strong style="color: #f87171;">raw LatinCy parse</strong> 
+                    side-by-side with the <strong style="color: #6ee7b7;">harmonized (post-processed) parse</strong>. 
+                    Changes made by the post-processor rules are highlighted below.
+                </p>
+                <div class="dev-input-row">
+                    <textarea
+                        id="dev-input"
+                        class="latin-textarea"
+                        placeholder="e.g. Quo usque tandem abutere, Catilina, patientia nostra?"
+                        rows="3"
+                        maxlength="5000"
+                    >{{ text }}</textarea>
+                    <button class="parse-button" id="dev-parse-btn">
+                        <span class="btn-text">Compare Parses</span>
+                        <span class="btn-loader">
+                            <span class="spinner"></span>
+                            Analyzing...
+                        </span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error banner -->
+            <div class="error-banner" id="dev-error-banner" style="display: none;">
+                <span class="error-icon">⚠</span>
+                <span id="dev-error-message"></span>
+                <button class="error-close" id="dev-error-close">✕</button>
+            </div>
+
+            <!-- Results -->
+            <div id="dev-results" class="dev-container" style="display: none;">
+                <!-- Side-by-side trees -->
+                <div class="comparison-grid">
+                    <div class="parse-panel glass-panel" id="raw-panel">
+                        <span class="panel-label raw">Raw (LatinCy)</span>
+                        <div class="parse-viewport" id="raw-tree"></div>
+                    </div>
+                    <div class="parse-panel glass-panel" id="harmonized-panel">
+                        <span class="panel-label harmonized">Harmonized (Post-processed)</span>
+                        <div class="parse-viewport" id="harmonized-tree"></div>
+                    </div>
+                </div>
+
+                <!-- Changes summary -->
+                <div class="changes-panel glass-panel">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="section-icon">📝</span>
+                            Post-processor Changes
+                        </h2>
+                        <span class="change-count-badge no-changes" id="change-count-badge">0 changes</span>
+                    </div>
+                    <div class="change-list" id="change-list"></div>
+                    <div class="report-summary" id="report-summary" style="display: none;"></div>
+                </div>
+
+                <!-- CoNLL-U details (collapsible) -->
+                <div class="conllu-viewer glass-panel">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="section-icon">📄</span>
+                            CoNLL-U Output
+                        </h2>
+                        <button class="export-btn" id="dev-export-conllu-btn" title="Export CoNLL-U">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export CoNLL-U
+                        </button>
+                    </div>
+                    <details>
+                        <summary>Raw CoNLL-U</summary>
+                        <pre class="conllu-pre" id="raw-conllu"></pre>
+                    </details>
+                    <details>
+                        <summary>Harmonized CoNLL-U</summary>
+                        <pre class="conllu-pre" id="harmonized-conllu"></pre>
+                    </details>
+                </div>
+            </div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("dev-input");
+    const parseBtn = document.getElementById("dev-parse-btn");
+    const results = document.getElementById("dev-results");
+    const rawTree = document.getElementById("raw-tree");
+    const harmonizedTree = document.getElementById("harmonized-tree");
+    const changeList = document.getElementById("change-list");
+    const changeBadge = document.getElementById("change-count-badge");
+    const rawConllu = document.getElementById("raw-conllu");
+    const harmonizedConllu = document.getElementById("harmonized-conllu");
+    const reportSummary = document.getElementById("report-summary");
+    const errorBanner = document.getElementById("dev-error-banner");
+    const errorMessage = document.getElementById("dev-error-message");
+    const errorClose = document.getElementById("dev-error-close");
+
+    function showError(msg) {
+        errorMessage.textContent = msg;
+        errorBanner.style.display = "flex";
+    }
+    function hideError() {
+        errorBanner.style.display = "none";
+    }
+    errorClose.addEventListener("click", hideError);
+
+    function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    async function compare() {
+        const text = input.value.trim();
+        if (!text) {
+            showError("Please enter some Latin text.");
+            return;
+        }
+
+        hideError();
+        parseBtn.classList.add("loading");
+
+        try {
+            const res = await fetch("/dev/compare", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error || "An error occurred.");
+                return;
+            }
+
+            // Render trees
+            rawTree.innerHTML = data.raw_html;
+            harmonizedTree.innerHTML = data.harmonized_html;
+
+            // Change count badge
+            const count = data.change_count;
+            changeBadge.textContent = count === 0 ? "No changes" : `${count} change${count !== 1 ? 's' : ''}`;
+            changeBadge.className = `change-count-badge ${count > 0 ? 'has-changes' : 'no-changes'}`;
+
+            // Change list
+            changeList.innerHTML = "";
+            if (data.changes && data.changes.length > 0) {
+                data.changes.forEach(c => {
+                    const card = document.createElement("div");
+                    card.className = "change-card";
+                    card.innerHTML = `
+                        <span class="token-name">${escapeHtml(c.token)}</span>
+                        <span class="old-value">${escapeHtml(c.old)}</span>
+                        <span class="arrow">→</span>
+                        <span class="new-value">${escapeHtml(c.new)}</span>
+                        <span class="rule-tag">${escapeHtml(c.rule)}</span>
+                    `;
+                    changeList.appendChild(card);
+                });
+            } else {
+                changeList.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No corrections were needed for this text.</p>';
+            }
+
+            // Report summary
+            if (data.report_summary) {
+                reportSummary.textContent = data.report_summary;
+                reportSummary.style.display = "block";
+            } else {
+                reportSummary.style.display = "none";
+            }
+
+            // CoNLL-U
+            rawConllu.textContent = data.raw_conllu || "";
+            harmonizedConllu.textContent = data.harmonized_conllu || "";
+
+            // Show results
+            results.style.display = "flex";
+            results.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        } catch (err) {
+            showError("Network error. Is the server running?");
+            console.error(err);
+        } finally {
+            parseBtn.classList.remove("loading");
+        }
+    }
+
+    parseBtn.addEventListener("click", compare);
+    input.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            compare();
+        }
+    });
+
+    // CoNLL-U Export
+    const exportConlluBtn = document.getElementById("dev-export-conllu-btn");
+    exportConlluBtn.addEventListener("click", () => {
+        const conlluText = harmonizedConllu.textContent;
+        if (!conlluText || !conlluText.trim()) {
+            showError("No CoNLL-U data to export. Run a parse first.");
+            return;
+        }
+        const blob = new Blob([conlluText], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "export.conllu";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    // Auto-parse if text was passed via query param
+    if (input.value.trim()) {
+        compare();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+{% block header_title %}About Latin Reader{% endblock %}
+
+{% block content %}
+            <section class="input-section glass-panel">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">ℹ️</span>
+                        About
+                    </h2>
+                </div>
+                <div style="color: var(--text-secondary); line-height: 1.8;">
+                    <p>
+                        <strong>Latin Reader</strong> is a web application that helps intermediate Latin students 
+                        read prose and poetry by automatically parsing input text and displaying visual 
+                        dependency trees.
+                    </p>
+                    <p style="margin-top: 16px;">
+                        It uses <a href="https://latincy.github.io/" target="_blank" rel="noopener" 
+                        style="color: var(--accent-purple);">LatinCy</a> (la_core_web_trf), a transformer-based 
+                        Latin NLP model built on <a href="https://spacy.io" target="_blank" rel="noopener"
+                        style="color: var(--accent-purple);">spaCy</a>.
+                    </p>
+                    <p style="margin-top: 16px;">
+                        The treebank data is sourced from the 
+                        <a href="https://universaldependencies.org/" target="_blank" rel="noopener"
+                        style="color: var(--accent-purple);">Universal Dependencies</a> project, 
+                        specifically the Latin Perseus and UDante treebanks.
+                    </p>
+                </div>
+            </section>
+{% endblock %}
