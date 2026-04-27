@@ -244,8 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tokenTableBody.innerHTML = "";
             data.tokens.forEach((tok, idx) => {
                 const tokNum = idx + 1;
-                const headId = tok.head_id || tokNum;
-                const headDisplay = `${headId} (${escapeHtml(tok.head)})`;
+                const headId = tok.head_id !== undefined ? tok.head_id : tokNum;
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td style="color: var(--text-muted); font-size: 0.82rem;">${tokNum}</td>
@@ -254,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td><span class="pos-badge ${posClass(tok.pos)}">${escapeHtml(tok.pos)}</span></td>
                     <td>${escapeHtml(tok.tag)}</td>
                     <td class="dep-label" data-dep="${escapeHtml(tok.dep)}">${escapeHtml(tok.dep)}</td>
-                    <td>${headDisplay}</td>
+                    <td title="${escapeHtml(tok.head)}">${headId}</td>
                     <td class="morph-text" title="${escapeHtml(tok.morph)}">${escapeHtml(tok.morph)}</td>
                 `;
                 tokenTableBody.appendChild(row);
