@@ -26,10 +26,13 @@ RUN mkdir -p latin_reader/static/data && \
 # Install the package and its dependencies
 RUN pip install --no-cache-dir -e .
 
-# Install spacy-transformers + CPU-only PyTorch (needed for trf model)
+# Install CPU-only PyTorch first (from PyTorch index)
+RUN pip install --no-cache-dir \
+    "torch>=2.0.0,<2.6.0" --index-url https://download.pytorch.org/whl/cpu
+
+# Install spacy-transformers + HF transformers (from PyPI)
 RUN pip install --no-cache-dir \
     "spacy-transformers>=1.3.0,<1.4.0" \
-    "torch>=2.0.0,<2.6.0" --index-url https://download.pytorch.org/whl/cpu \
     "transformers>=4.30.0,<5.0.0"
 
 # Install HF hub with Xet support (model is stored on HF's Xet backend)
